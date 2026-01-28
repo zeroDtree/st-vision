@@ -1,0 +1,11 @@
+{
+  "display_name": "ST Vision",
+  "loading_order": 10,
+  "requires": [],
+  "optional": [],
+  "js": "index_for_st.js",
+  "author": "zengls",
+  "version": "1.0.0",
+  "homePage": "https://github.com/zeroDtree/st-vision",
+  "description": "Image generation and management using NovelAI"
+}
