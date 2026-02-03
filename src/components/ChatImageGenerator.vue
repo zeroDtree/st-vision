@@ -493,6 +493,70 @@ function ensureGalleryControls(container) {
       "display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%;";
   }
 
+  const openFullscreenForGallery = () => {
+    const images = container._stVisionImages || [];
+    const currentIndex =
+      parseInt(container.dataset.currentIndex || "0", 10) || 0;
+    const current = images[currentIndex];
+    if (current?.dataURL) {
+      showFullscreenImage(current.dataURL, images, currentIndex);
+    }
+  };
+
+  const bindImageTapAndClick = (imageEl) => {
+    imageEl.addEventListener("click", (e) => {
+      if (
+        imageEl._stVisionTapOpenedAt &&
+        Date.now() - imageEl._stVisionTapOpenedAt < 400
+      ) {
+        delete imageEl._stVisionTapOpenedAt;
+        return;
+      }
+      openFullscreenForGallery();
+    });
+    imageEl.addEventListener(
+      "touchstart",
+      (e) => {
+        const t = e.touches[0];
+        imageEl._stVisionTouchStart = {
+          x: t.clientX,
+          y: t.clientY,
+          time: Date.now(),
+        };
+        imageEl._stVisionTouchMoved = false;
+      },
+      { passive: true },
+    );
+    imageEl.addEventListener(
+      "touchmove",
+      (e) => {
+        if (!imageEl._stVisionTouchStart) return;
+        const t = e.touches[0];
+        const dx = t.clientX - imageEl._stVisionTouchStart.x;
+        const dy = t.clientY - imageEl._stVisionTouchStart.y;
+        if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+          imageEl._stVisionTouchMoved = true;
+        }
+      },
+      { passive: true },
+    );
+    imageEl.addEventListener(
+      "touchend",
+      (e) => {
+        if (!imageEl._stVisionTouchStart) return;
+        const moved = imageEl._stVisionTouchMoved;
+        const duration = Date.now() - imageEl._stVisionTouchStart.time;
+        imageEl._stVisionTouchStart = null;
+        if (moved || duration >= 500) return;
+        e.preventDefault();
+        e.stopPropagation();
+        imageEl._stVisionTapOpenedAt = Date.now();
+        openFullscreenForGallery();
+      },
+      { passive: false },
+    );
+  };
+
   let img = imageWrapper.querySelector(".st-vision-image");
   if (!img) {
     img = document.createElement("img");
@@ -500,61 +564,14 @@ function ensureGalleryControls(container) {
     img.style.cssText =
       "max-width: 400px; max-height: 400px; width: auto; height: auto; object-fit: contain; border-radius: 8px; display: block; cursor: pointer; margin: 0 auto; touch-action: manipulation;";
     img.title = "Click to view full size";
-    img.addEventListener("click", () => {
-      const images = container._stVisionImages || [];
-      const currentIndex =
-        parseInt(container.dataset.currentIndex || "0", 10) || 0;
-      const current = images[currentIndex];
-      if (current?.dataURL) {
-        showFullscreenImage(current.dataURL, images, currentIndex);
-      }
-    });
-    // Also handle touch events for mobile
-    img.addEventListener(
-      "touchend",
-      (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        const images = container._stVisionImages || [];
-        const currentIndex =
-          parseInt(container.dataset.currentIndex || "0", 10) || 0;
-        const current = images[currentIndex];
-        if (current?.dataURL) {
-          showFullscreenImage(current.dataURL, images, currentIndex);
-        }
-      },
-      { passive: false },
-    );
+    bindImageTapAndClick(img);
     imageWrapper.appendChild(img);
   } else {
     // Update existing image styles
     img.style.margin = "0 auto";
     // Re-bind click handler if needed
     if (!img._stVisionClickBound) {
-      img.addEventListener("click", () => {
-        const images = container._stVisionImages || [];
-        const currentIndex =
-          parseInt(container.dataset.currentIndex || "0", 10) || 0;
-        const current = images[currentIndex];
-        if (current?.dataURL) {
-          showFullscreenImage(current.dataURL, images, currentIndex);
-        }
-      });
-      img.addEventListener(
-        "touchend",
-        (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const images = container._stVisionImages || [];
-          const currentIndex =
-            parseInt(container.dataset.currentIndex || "0", 10) || 0;
-          const current = images[currentIndex];
-          if (current?.dataURL) {
-            showFullscreenImage(current.dataURL, images, currentIndex);
-          }
-        },
-        { passive: false },
-      );
+      bindImageTapAndClick(img);
       img._stVisionClickBound = true;
     }
   }
