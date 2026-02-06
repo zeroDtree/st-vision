@@ -317,7 +317,7 @@ const emit = defineEmits([
             margin-top: 4px;
           "
         >
-          <span>5s</span>
+          <span>0s</span>
           <span>12s</span>
         </div>
       </div>
