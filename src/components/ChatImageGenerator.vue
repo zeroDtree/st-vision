@@ -711,9 +711,9 @@ async function processRequestQueue() {
   isProcessingQueue = true;
 
   // Get delay from config (default to 8 seconds if not set)
-  // Ensure delay is within valid range (5-12 seconds)
-  let delaySeconds = state.chatImageGen.queueDelay || 8;
-  if (delaySeconds < 5) delaySeconds = 5;
+  // Ensure delay is within valid range (0-12 seconds)
+  let delaySeconds = state.chatImageGen.queueDelay ?? 8;
+  if (delaySeconds < 0) delaySeconds = 0;
   if (delaySeconds > 12) delaySeconds = 12;
   const delayMs = delaySeconds * 1000;
 

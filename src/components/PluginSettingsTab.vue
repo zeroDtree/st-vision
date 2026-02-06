@@ -280,8 +280,8 @@ const emit = defineEmits([
         <label for="vision_chat_queue_delay">
           Queue Delay (seconds)
           <span class="vision_help_text"
-            >(Delay between requests: 5-12 seconds recommended to prevent 429
-            errors)</span
+            >(Delay between requests: 0-12 seconds. 5+ recommended to prevent
+            429 errors)</span
           >
         </label>
         <div style="display: flex; align-items: center; gap: 12px">
@@ -289,7 +289,7 @@ const emit = defineEmits([
             id="vision_chat_queue_delay"
             v-model.number="state.chatImageGen.queueDelay"
             type="range"
-            min="5"
+            min="0"
             max="12"
             step="1"
             :disabled="
