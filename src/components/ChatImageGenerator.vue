@@ -717,20 +717,29 @@ async function processRequestQueue() {
   if (delaySeconds > 12) delaySeconds = 12;
   const delayMs = delaySeconds * 1000;
 
+  const delayWhen = state.chatImageGen.queueDelayWhen || "after_response";
+
   while (requestQueue.length > 0) {
     const request = requestQueue.shift();
 
-    try {
-      await request.fn();
-    } catch (error) {
-      console.error("[ST Vision] Queue request failed:", error);
-      // Continue processing next request even if one fails
-    }
-
-    // Add delay after processing request (if there are more requests in queue)
-    // This ensures proper spacing between requests to prevent 429 errors
-    if (requestQueue.length > 0) {
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    if (delayWhen === "after_send") {
+      // Delay is from when request is sent: start request (don't await), wait delay, then next
+      request.fn().catch((error) => {
+        console.error("[ST Vision] Queue request failed:", error);
+      });
+      if (requestQueue.length > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    } else {
+      // after_response (default): wait for response, then delay before next
+      try {
+        await request.fn();
+      } catch (error) {
+        console.error("[ST Vision] Queue request failed:", error);
+      }
+      if (requestQueue.length > 0) {
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
     }
   }
 

@@ -265,6 +265,18 @@ const emit = defineEmits([
       </div>
 
       <div v-if="state.chatImageGen.useRequestQueue" class="vision_form_group">
+        <label for="vision_chat_queue_delay_when">Queue delay when</label>
+        <select
+          id="vision_chat_queue_delay_when"
+          v-model="state.chatImageGen.queueDelayWhen"
+          :disabled="
+            !state.chatImageGen.enabled || !state.chatImageGen.useRequestQueue
+          "
+          style="margin-bottom: 8px"
+        >
+          <option value="after_response">After response (wait for reply, then delay)</option>
+          <option value="after_send">After send (delay from when request is sent)</option>
+        </select>
         <label for="vision_chat_queue_delay">
           Queue Delay (seconds)
           <span class="vision_help_text"

@@ -111,6 +111,8 @@ export const state = reactive({
     tagSuffix: "[/img-gen]",
     useRequestQueue: true, // Queue requests to avoid API rate limiting
     queueDelay: 8, // Delay between requests in seconds (5-12 seconds to prevent 429 errors)
+    // 'after_response': wait for response then delay (default). 'after_send': delay from when request is sent.
+    queueDelayWhen: "after_response",
   },
   // Theme settings
   theme: {
