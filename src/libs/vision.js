@@ -76,8 +76,17 @@ function init() {
     state.theme = { current: "dark" };
   }
 
+  // Ensure showFloatingButton has a default value
+  if (state.showFloatingButton === undefined) {
+    state.showFloatingButton = true;
+  }
+
   // Apply theme on init - wait for DOM to be ready
   if (typeof window !== "undefined") {
+    // Expose state and saveState to window for SillyTavern integration
+    window.stVisionState = state;
+    window.stVisionSaveState = saveState;
+
     const applyThemeOnReady = () => {
       const themeName = state.theme?.current || "dark";
       console.log("[ST Vision] Applying theme on init:", themeName);

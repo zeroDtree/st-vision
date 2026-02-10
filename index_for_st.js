@@ -51,10 +51,50 @@
     document.head.appendChild(script);
   }
 
+  // Add menu item to extensions menu
+  function addExtensionsMenuItem() {
+    // Wait for extensionsMenu to be available
+    const checkMenu = setInterval(() => {
+      const menuContainer = document.getElementById('st_vision_wand_container');
+      if (menuContainer) {
+        clearInterval(checkMenu);
+        
+        const menuItemHtml = `
+          <div id="st_vision_fab_toggle" class="list-group-item flex-container flexGap5">
+            <div class="extensionsMenuExtensionButton fa-solid fa-wand-magic-sparkles"></div>
+            <span>Toggle Floating Button</span>
+          </div>
+        `;
+        
+        menuContainer.innerHTML = menuItemHtml;
+        
+        // Add click handler
+        document.getElementById('st_vision_fab_toggle').addEventListener('click', () => {
+          // Access Vue state through window
+          if (window.stVisionState) {
+            window.stVisionState.showFloatingButton = !window.stVisionState.showFloatingButton;
+            // Save state
+            if (window.stVisionSaveState) {
+              window.stVisionSaveState();
+            }
+          }
+        });
+        
+        console.log("[ST Vision] Extensions menu item added");
+      }
+    }, 100);
+    
+    // Clear interval after 5 seconds to prevent infinite checking
+    setTimeout(() => clearInterval(checkMenu), 5000);
+  }
+
   // Initialize extension
   jQuery(async () => {
     console.log("[ST Vision] Extension loaded");
     loadVueApp();
+    
+    // Add extensions menu item after a short delay to ensure DOM is ready
+    setTimeout(addExtensionsMenuItem, 500);
   });
 
   // Export extension API if needed

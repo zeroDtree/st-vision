@@ -104,6 +104,8 @@ export const state = reactive({
   currentConfigName: "default",
   modalVisible: false,
   fabPosition: { x: null, y: null },
+  fabSize: 56, // Floating button size in pixels (default: 56px)
+  showFloatingButton: true, // Show/hide the floating action button
   // Chat image generation settings
   chatImageGen: {
     enabled: true,

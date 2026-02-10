@@ -1,8 +1,12 @@
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { Vision } from "../libs/vision.js";
 
 const { state, saveState } = Vision();
+
+// Computed property for button size
+const buttonSize = computed(() => state.fabSize || 56);
+const iconSize = computed(() => Math.round(buttonSize.value * 0.43)); // Icon size is about 43% of button size
 
 function toggleModal() {
   state.modalVisible = !state.modalVisible;
@@ -148,9 +152,15 @@ onUnmounted(() => {
 
 <template>
   <div
+    v-if="state.showFloatingButton"
     ref="fab"
     class="st_vision_fab"
     :class="{ st_vision_fab_dragging: isDragging }"
+    :style="{
+      width: buttonSize + 'px',
+      height: buttonSize + 'px',
+      fontSize: iconSize + 'px',
+    }"
     title="ST Vision - Image Generation (Drag to move)"
     @mousedown="dragStart"
     @touchstart="dragStart"
@@ -164,8 +174,7 @@ onUnmounted(() => {
   position: fixed;
   bottom: 80px;
   right: 30px;
-  width: 56px;
-  height: 56px;
+  /* width and height are now set dynamically via :style */
   background: var(
     --st-vision-button-bg,
     linear-gradient(135deg, #667eea 0%, #764ba2 100%)
@@ -181,7 +190,7 @@ onUnmounted(() => {
     transform 0.2s ease,
     box-shadow 0.2s ease;
   color: white;
-  font-size: 24px;
+  /* font-size is now set dynamically via :style */
   user-select: none;
   touch-action: none;
 }
@@ -209,9 +218,7 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .st_vision_fab {
-    width: 56px;
-    height: 56px;
-    font-size: 24px;
+    /* width, height, and font-size are now set dynamically via :style */
     bottom: 20px;
     right: 20px;
     touch-action: manipulation;

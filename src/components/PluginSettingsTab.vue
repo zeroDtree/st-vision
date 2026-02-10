@@ -373,6 +373,73 @@ const emit = defineEmits([
       </div>
     </div>
 
+    <!-- UI Settings -->
+    <div class="vision_section">
+      <h3><i class="fa-solid fa-sliders"></i> UI Settings</h3>
+      <p class="vision_help_text" style="margin-bottom: 15px">
+        Customize the appearance and behavior of the floating button.
+      </p>
+
+      <div class="vision_form_group">
+        <div class="vision_checkbox_group">
+          <input
+            id="vision_show_floating_button"
+            v-model="state.showFloatingButton"
+            type="checkbox"
+          />
+          <label for="vision_show_floating_button">
+            Show Floating Button
+            <span class="vision_help_text"
+              >(Display the floating action button for quick access to image generation)</span
+            >
+          </label>
+        </div>
+      </div>
+
+      <div class="vision_form_group">
+        <label for="vision_fab_size">
+          Floating Button Size (px)
+          <span class="vision_help_text"
+            >(Adjust the size of the floating button: 40-80px, default: 56px)</span
+          >
+        </label>
+        <div style="display: flex; align-items: center; gap: 12px">
+          <input
+            id="vision_fab_size"
+            v-model.number="state.fabSize"
+            type="range"
+            min="40"
+            max="80"
+            step="2"
+            style="flex: 1"
+          />
+          <span
+            style="
+              min-width: 50px;
+              text-align: right;
+              color: var(--st-vision-primary, #667eea);
+              font-weight: 600;
+            "
+          >
+            {{ state.fabSize }}px
+          </span>
+        </div>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85em;
+            color: var(--st-vision-text-muted, #888);
+            margin-top: 4px;
+          "
+        >
+          <span>40px</span>
+          <span>56px</span>
+          <span>80px</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Theme Settings -->
     <div class="vision_section">
       <h3><i class="fa-solid fa-palette"></i> Theme Settings</h3>
