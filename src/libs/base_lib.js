@@ -5,7 +5,7 @@ export { loadState, saveState };
 function loadState() {
   try {
     const { extensionSettings } = SillyTavern.getContext();
-    let tmp = extensionSettings?.[EXTENSION_NAME];
+    const tmp = extensionSettings?.[EXTENSION_NAME];
     console.log("[ST Vision] Loading state, tmp=", tmp);
     if (!tmp) {
       extensionSettings[EXTENSION_NAME] = state;

@@ -9,7 +9,7 @@
         </button>
       </div>
 
-      <div class="modal-body">
+      <div ref="modalBodyRef" class="modal-body">
         <!-- 搜索和筛选 -->
         <div class="filters">
           <input
@@ -37,12 +37,16 @@
         <div v-if="filteredImages.length > 0" class="image-grid">
           <div
             v-for="(img, index) in paginatedImages"
-            :key="index"
+            :key="img.imageId ?? `idx-${index}`"
             class="image-card"
           >
             <div class="image-wrapper">
               <img
-                :src="img.dataURL"
+                class="st-vision-history-thumb"
+                :data-src="img.dataURL"
+                :src="TRANSPARENT_PIXEL"
+                loading="lazy"
+                decoding="async"
                 :alt="img.prompt"
                 @click="viewImage(img)"
                 @touchstart="handleImageTouchStart($event, index)"
@@ -100,11 +104,15 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, nextTick, onUnmounted } from "vue";
 import {
   pathToURL,
   deleteImage as deleteImageFromServer,
 } from "../libs/image_api.js";
+
+/** 1×1 transparent GIF — placeholder until IO promotes `data-src` to `src`. */
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
 
 const props = defineProps({
   visible: {
@@ -120,7 +128,46 @@ const sortBy = ref("newest");
 const currentPage = ref(1);
 const itemsPerPage = 20;
 const activeOverlayIndex = ref(-1);
+const modalBodyRef = ref(null);
 let touchTimer = null;
+/** @type {IntersectionObserver | null} */
+let historyImageObserver = null;
+
+const HISTORY_IO_ROOT_MARGIN = "200px";
+
+function disconnectHistoryImageObserver() {
+  if (historyImageObserver) {
+    historyImageObserver.disconnect();
+    historyImageObserver = null;
+  }
+}
+
+function setupHistoryImageLazy() {
+  disconnectHistoryImageObserver();
+  if (!props.visible || !modalBodyRef.value) return;
+
+  const root = modalBodyRef.value;
+  historyImageObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const el = entry.target;
+        if (!(el instanceof HTMLImageElement)) continue;
+        const url = el.dataset.src;
+        if (url && el.src !== url) {
+          el.src = url;
+          el.removeAttribute("data-src");
+        }
+        historyImageObserver?.unobserve(el);
+      }
+    },
+    { root, rootMargin: HISTORY_IO_ROOT_MARGIN, threshold: 0 },
+  );
+
+  root
+    .querySelectorAll("img.st-vision-history-thumb[data-src]")
+    .forEach((el) => historyImageObserver?.observe(el));
+}
 
 const imageHistory = computed(() => {
   try {
@@ -183,6 +230,26 @@ const totalSize = computed(() => {
 
 watch([searchQuery, sortBy], () => {
   currentPage.value = 1;
+});
+
+watch(
+  () => (props.visible ? paginatedImages.value : []),
+  async () => {
+    await nextTick();
+    setupHistoryImageLazy();
+  },
+  { flush: "post" },
+);
+
+watch(
+  () => props.visible,
+  (visible) => {
+    if (!visible) disconnectHistoryImageObserver();
+  },
+);
+
+onUnmounted(() => {
+  disconnectHistoryImageObserver();
 });
 
 function close() {

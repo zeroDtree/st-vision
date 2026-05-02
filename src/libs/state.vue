@@ -7,7 +7,7 @@ import {
   applyTheme as applyThemeUtil,
 } from "./theme.js";
 
-export const EXTENSION_NAME = "st-paint";
+export const EXTENSION_NAME = "st-vision";
 
 export const Model = NekoAI.Model;
 export const Action = NekoAI.Action;

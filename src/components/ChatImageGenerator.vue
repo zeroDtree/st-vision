@@ -30,6 +30,58 @@ const generatingPrompts = new Set();
 const requestQueue = [];
 let isProcessingQueue = false;
 
+const TRANSPARENT_PIXEL =
+  "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+
+const GALLERY_IO_ROOT_MARGIN = "200px";
+
+function resolveChatScrollRoot() {
+  return document.getElementById("chat");
+}
+
+function disconnectGalleryLazyObserver(img) {
+  if (img && img._stVisionLazyObs) {
+    img._stVisionLazyObs.disconnect();
+    delete img._stVisionLazyObs;
+  }
+}
+
+function applyGalleryImageSrc(img, url) {
+  if (!img || !url) return;
+  disconnectGalleryLazyObserver(img);
+  img.src = url;
+  img.removeAttribute("data-src");
+}
+
+function observeLazyGalleryImage(img, url) {
+  if (!img || !url) return;
+  disconnectGalleryLazyObserver(img);
+  img.decoding = "async";
+  img.src = TRANSPARENT_PIXEL;
+  img.setAttribute("data-src", url);
+
+  const root = resolveChatScrollRoot();
+  const obs = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        const el = entry.target;
+        if (!(el instanceof HTMLImageElement)) continue;
+        const u = el.getAttribute("data-src");
+        if (u) {
+          el.src = u;
+          el.removeAttribute("data-src");
+        }
+        obs.unobserve(el);
+        if (el._stVisionLazyObs === obs) delete el._stVisionLazyObs;
+      }
+    },
+    { root, rootMargin: GALLERY_IO_ROOT_MARGIN, threshold: 0 },
+  );
+  img._stVisionLazyObs = obs;
+  obs.observe(img);
+}
+
 function getMessageUid(message, fallbackMesId = null) {
   const chatId = context?.chatId || "chat";
   const mesId =
@@ -122,6 +174,8 @@ function showFullscreenImage(imageDataURL, images = [], currentIndex = 0) {
   `;
 
   const img = document.createElement("img");
+  img.loading = "eager";
+  img.decoding = "async";
   img.src = imageDataURL;
   img.style.cssText = `
     max-width: 100%;
@@ -561,6 +615,7 @@ function ensureGalleryControls(container) {
   if (!img) {
     img = document.createElement("img");
     img.className = "st-vision-image";
+    img.decoding = "async";
     img.style.cssText =
       "max-width: 400px; max-height: 400px; width: auto; height: auto; object-fit: contain; border-radius: 8px; display: block; cursor: pointer; margin: 0 auto; touch-action: manipulation;";
     img.title = "Click to view full size";
@@ -640,11 +695,14 @@ function ensureGalleryControls(container) {
   return { img, nav, indicator };
 }
 
-function renderGallery(container, images, startIndex = 0) {
+function renderGallery(container, images, startIndex = 0, { eager = false } = {}) {
   container._stVisionImages = images;
   const { img, nav, indicator } = ensureGalleryControls(container);
 
   if (!images || images.length === 0) {
+    disconnectGalleryLazyObserver(img);
+    img.removeAttribute("src");
+    img.removeAttribute("data-src");
     img.style.display = "none";
     nav.style.display = "none";
     indicator.textContent = "";
@@ -656,9 +714,15 @@ function renderGallery(container, images, startIndex = 0) {
   const current = images[safeIndex];
 
   img.style.display = "block";
-  img.src = current.dataURL;
   img.dataset.imageId = current.imageId;
   container.dataset.currentIndex = String(safeIndex);
+
+  const url = current.dataURL;
+  if (eager) {
+    applyGalleryImageSrc(img, url);
+  } else {
+    observeLazyGalleryImage(img, url);
+  }
 
   indicator.textContent = `${safeIndex + 1}/${images.length}`;
   nav.style.display = images.length > 1 ? "flex" : "none";
@@ -669,7 +733,7 @@ function shiftGallery(container, delta) {
   if (!images.length) return;
   const current = parseInt(container.dataset.currentIndex || "0", 10) || 0;
   const nextIndex = (current + delta + images.length) % images.length;
-  renderGallery(container, images, nextIndex);
+  renderGallery(container, images, nextIndex, { eager: true });
 }
 
 function getImageFromHistory(imageId) {
@@ -859,7 +923,9 @@ async function generateAndInsertImage(messageId, prompt, containerElement) {
         '<i class="fa-solid fa-wand-magic-sparkles"></i> Generate Image';
       button.innerHTML = restoredHTML;
 
-      renderGallery(containerElement, updatedImages, updatedImages.length - 1);
+      renderGallery(containerElement, updatedImages, updatedImages.length - 1, {
+        eager: true,
+      });
     } catch (error) {
       console.error("[ST Vision] Failed to generate image:", error);
       button.disabled = false;
